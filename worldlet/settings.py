@@ -20,6 +20,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-7l&xnjb81f-p*c&95c+-3ku*@ms0!n)ix@m9d&7j+!z!tzxid-'
+# AES 密钥
+AES_KEY = '2c8a01a556b1fbb0ee7852da5524bb7c'
+# RSA 密钥，用于加密 RSA 私钥
+RSA_KEY = '8eb6722b7c0c8ab7b6b17473a12a3683'
+RSA_PRIVATE_KEY_PATH = BASE_DIR / 'secret/backend_private_key.pem'
+RSA_PUBLIC_KEY_PATH = BASE_DIR / 'secret/backend_public_key.pem'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -69,7 +75,7 @@ ROOT_URLCONF = 'worldlet.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / "templates"],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
