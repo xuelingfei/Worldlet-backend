@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
+import hashlib
+import hmac
+import json
+import secrets
+from base64 import b64encode, b64decode
 from binascii import b2a_hex, a2b_hex
-from hashlib import sha256
-from hmac import compare_digest
-from hmac import new as hmac_new
-from secrets import token_hex
 
 from Cryptodome.Cipher import AES, PKCS1_OAEP as PKCS1_CIPHER
 from Cryptodome.Hash.SHA1 import SHA1Hash
 from Cryptodome.PublicKey import RSA
+from Cryptodome.Random import get_random_bytes
 from Cryptodome.Signature import PKCS1_PSS as PKCS1_SIGNATURE
 from Cryptodome.Util.Padding import pad, unpad
 
@@ -25,8 +27,8 @@ class CypherHash:
         Return:
             str: 散列值 + 盐值
         """
-        random_salt = token_hex(16)
-        cypher_text = sha256((random_salt + data).encode('utf-8')).hexdigest()
+        random_salt = secrets.token_hex(16)
+        cypher_text = hashlib.sha256((random_salt + data).encode('utf-8')).hexdigest()
         return cypher_text + random_salt
 
     @staticmethod
@@ -39,8 +41,8 @@ class CypherHash:
         Return:
             str: 散列值 + 密钥
         """
-        random_key = token_hex(16)
-        cypher_text = hmac_new(random_key.encode('utf-8'), data.encode('utf-8'), 'sha256').hexdigest()
+        random_key = secrets.token_hex(16)
+        cypher_text = hmac.new(random_key.encode('utf-8'), data.encode('utf-8'), 'sha256').hexdigest()
         return cypher_text + random_key
 
     @staticmethod
@@ -57,15 +59,15 @@ class CypherHash:
         """
         if method == 'salt_sha':
             key = target[-32:]
-            cypher_text = sha256((key + value).encode('utf-8')).hexdigest()
+            cypher_text = hashlib.sha256((key + value).encode('utf-8')).hexdigest()
             result = cypher_text + key
         elif method == 'hmac_sha':
             key = target[-32:]
-            cypher_text = hmac_new(key.encode('utf-8'), value.encode('utf-8'), 'sha256').hexdigest()
+            cypher_text = hmac.new(key.encode('utf-8'), value.encode('utf-8'), 'sha256').hexdigest()
             result = cypher_text + key
         else:
             result = value
-        return compare_digest(result, target)
+        return hmac.compare_digest(result, target)
 
 
 class CypherAES:
@@ -129,6 +131,9 @@ class CypherRSA:
 
     @staticmethod
     def import_private_key(path=RSA_PRIVATE_KEY_PATH):
+        """
+        导入 RSA 私钥（scryptAndAES128-CBC 加密）
+        """
         try:
             with open(path, mode='rb') as f:
                 encrypted_key_data = f.read()
@@ -139,6 +144,9 @@ class CypherRSA:
 
     @staticmethod
     def import_public_key(path=RSA_PUBLIC_KEY_PATH):
+        """
+        导入 RSA 公钥
+        """
         try:
             with open(path, mode='rb') as f:
                 key_data = f.read()
@@ -183,7 +191,7 @@ class CypherRSA:
     @staticmethod
     def sign(data):
         """
-        RSA 签名，PKCS1_PSS模式，采用 sha1 散列算法
+        RSA 签名，PKCS1_PSS模式，采用 SHA1 散列算法
 
         Args:
             data (str): 需要签名的数据
@@ -199,7 +207,7 @@ class CypherRSA:
     @staticmethod
     def verify(data, signature):
         """
-        RSA 验签，PKCS1_PSS模式，采用 sha1 散列算法
+        RSA 验签，PKCS1_PSS模式，采用 SHA1 散列算法
 
         Args:
             data (str): 需验证签名的数据
@@ -211,3 +219,31 @@ class CypherRSA:
         cryptor = PKCS1_SIGNATURE.new(public_key)
         digest = SHA1Hash(data.encode('utf-8'))
         return cryptor.verify(digest, a2b_hex(signature))
+
+
+class CypherAEAD:
+    @staticmethod
+    def encrypt(plain_text):
+        header = b"header"
+        data = b"secret"
+        key = get_random_bytes(16)
+        cipher = AES.new(key, AES.MODE_EAX)
+        cipher.update(header)
+        ciphertext, tag = cipher.encrypt_and_digest(data)
+        json_k = ['nonce', 'header', 'ciphertext', 'tag']
+        json_v = [b64encode(x).decode('utf-8') for x in [cipher.nonce, header, ciphertext, tag]]
+        result = json.dumps(dict(zip(json_k, json_v)))
+        return result
+
+    @staticmethod
+    def decrypt(cypher_text, key):
+        try:
+            b64 = json.loads(cypher_text)
+            json_k = ['nonce', 'header', 'ciphertext', 'tag']
+            jv = {k: b64decode(b64[k]) for k in json_k}
+            cipher = AES.new(key, AES.MODE_EAX, nonce=jv['nonce'])
+            cipher.update(jv['header'])
+            plaintext = cipher.decrypt_and_verify(jv['ciphertext'], jv['tag'])
+            return plaintext
+        except (ValueError, KeyError):
+            print("Incorrect decryption")
