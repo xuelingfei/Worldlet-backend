@@ -273,7 +273,7 @@ class CryptAE:
     @staticmethod
     def encrypt(plain_text, key=AES_KEY):
         """
-        AES 加密，EAX 模式
+        AES-EAX 加密。
 
         Args:
           plain_text (str): 明文

@@ -3,11 +3,11 @@ from django.db import models
 
 
 class BaseModel(models.Model):
-    FALSE = 0
-    TRUE = 1
+    NOT = 0
+    IS = 1
     IS_OR_NOT = (
-        (FALSE, '否'),
-        (TRUE, '是'),
+        (NOT, '否'),
+        (IS, '是'),
     )
 
     STATE_DELETE = -1  # 已删除

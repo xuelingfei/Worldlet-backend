@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-import hashlib
-
 from django.db import models
 
 from system.models.base import BaseModel
 from system.models.person import Person
+from system.utils.cryption import CryptHash
 
 
 class User(BaseModel):
@@ -12,18 +11,20 @@ class User(BaseModel):
     name = models.CharField(verbose_name='用户名', null=True, max_length=50)
     mobile = models.CharField(verbose_name='手机号', null=True, max_length=50)
     mail = models.EmailField(verbose_name='邮箱', null=True)
-    password = models.CharField(verbose_name='密码', null=True, max_length=50)
-    is_admin = models.IntegerField(verbose_name='是否是管理员', null=True, choices=BaseModel.IS_OR_NOT, default=0)
+    password = models.CharField(verbose_name='密码', null=True, max_length=255)
+    admin = models.IntegerField(verbose_name='是否是管理员', null=True, choices=BaseModel.IS_OR_NOT, default=BaseModel.NOT)
     last_login = models.DateTimeField(verbose_name='上次登录时间', null=True)
 
-    person = models.ForeignKey(Person, null=True, on_delete=models.DO_NOTHING)
+    person = models.ForeignKey(Person, verbose_name='实名信息', null=True, on_delete=models.DO_NOTHING,
+                               related_name='system_Users_related')
 
-    create_user = models.ForeignKey('self', null=True, on_delete=models.DO_NOTHING)#related_name="%(app_label)s_%(class)s_related", related_query_name="%(app_label)s_%(class)ss",
-    update_user = models.ForeignKey('self', null=True, on_delete=models.DO_NOTHING)#如果你未指定抽象基类中的 related_name 属性，默认的反转名会是子类名，后接 '_set' 。
+    create_user = models.ForeignKey('self', null=True, on_delete=models.DO_NOTHING,
+                                    related_name='system_UsersCreated_related')
+    update_user = models.ForeignKey('self', null=True, on_delete=models.DO_NOTHING,
+                                    related_name='system_UsersUpdated_related')
 
     class Meta:
         verbose_name = '用户表'
-        db_table = 'system_user'
 
     # password 字段需加密
     def save(self, *args, **kwargs):
@@ -31,67 +32,83 @@ class User(BaseModel):
             user = User.objects.get(pk=self.id)
             self.password = user.password
         elif self.password:
-            self.password = hashlib.md5(self.password.encode(encoding='utf-8')).hexdigest()
+            self.password = CryptHash.hmac_sha(self.password)
         super(User, self).save(*args, **kwargs)
+
+
+class Menu(BaseModel):
+    name = models.CharField(verbose_name='名称', null=True, max_length=50)
+    url = models.CharField(verbose_name='映射地址', null=True, max_length=50)
+    icon = models.CharField(verbose_name='图标', null=True, max_length=50)
+    index = models.IntegerField(verbose_name='排序', default=0)
+    parent = models.ForeignKey('self', verbose_name='父菜单', null=True, on_delete=models.SET_NULL,
+                               related_name='system_Menus_related')
+    description = models.TextField(verbose_name='描述', null=True)
+
+    create_user = models.ForeignKey(User, null=True, on_delete=models.DO_NOTHING,
+                                    related_name='system_MenusCreated_related')
+    update_user = models.ForeignKey(User, null=True, on_delete=models.DO_NOTHING,
+                                    related_name='system_MenusUpdated_related')
+
+    class Meta:
+        verbose_name = '菜单表'
+
+
+class Access(BaseModel):
+    name = models.CharField(verbose_name='名称', null=True, max_length=50)
+    url = models.CharField(verbose_name='映射地址', null=True, max_length=50)
+    description = models.TextField(verbose_name='描述', null=True)
+
+    menu = models.ForeignKey(Menu, verbose_name='关联菜单', null=True, on_delete=models.SET_NULL,
+                             related_name='system_Accesses_related')
+
+    create_user = models.ForeignKey(User, null=True, on_delete=models.DO_NOTHING,
+                                    related_name='system_AccessesCreated_related')
+    update_user = models.ForeignKey(User, null=True, on_delete=models.DO_NOTHING,
+                                    related_name='system_AccessesUpdated_related')
+
+    class Meta:
+        verbose_name = '权限表'
 
 
 class Role(BaseModel):
     name = models.CharField(verbose_name='角色名', null=True, max_length=50)
     description = models.TextField(verbose_name='描述', null=True)
 
-    create_user = models.ForeignKey(User, null=True, on_delete=models.DO_NOTHING)
-    update_user = models.ForeignKey(User, null=True, on_delete=models.DO_NOTHING)
+    create_user = models.ForeignKey(User, null=True, on_delete=models.DO_NOTHING,
+                                    related_name='system_RolesCreated_related')
+    update_user = models.ForeignKey(User, null=True, on_delete=models.DO_NOTHING,
+                                    related_name='system_RolesUpdated_related')
 
     class Meta:
         verbose_name = '角色表'
-        db_table = 'system_role'
 
 
-class Menu(BaseModel):
-    MENU = 0
-    OPERATION = 1
-    TYPE_CHOICE = (
-        (MENU, '菜单'),
-        (OPERATION, '操作'),
-    )
-    name = models.CharField(verbose_name='名称', null=True, max_length=50)
-    type_ = models.IntegerField(verbose_name='类型', null=True, choices=TYPE_CHOICE)
-    url = models.CharField(verbose_name='映射地址', null=True, max_length=50)
-    icon = models.CharField(verbose_name='图标', null=True, max_length=254)
-    index = models.IntegerField(verbose_name='排序', default=0)
-    parent = models.ForeignKey('self', verbose_name='父菜单', null=True, on_delete=models.SET_NULL)
-    description = models.TextField(verbose_name='描述', null=True)
+class RoleAccess(BaseModel):
+    related_accesses = models.TextField(verbose_name='关联权限', null=True)
+    role = models.ForeignKey(Role, verbose_name="角色", null=True, on_delete=models.SET_NULL,
+                             related_name='system_RoleMenus_related')
 
-    create_user = models.ForeignKey(User, null=True, on_delete=models.DO_NOTHING)
-    update_user = models.ForeignKey(User, null=True, on_delete=models.DO_NOTHING)
+    create_user = models.ForeignKey(User, null=True, on_delete=models.DO_NOTHING,
+                                    related_name='system_RoleMenusCreated_related')
+    update_user = models.ForeignKey(User, null=True, on_delete=models.DO_NOTHING,
+                                    related_name='system_RoleMenusUpdated_related')
 
     class Meta:
-        verbose_name = '菜单表'
-        db_table = 'system_menu'
-
-    def __str__(self):
-        return self.name if self.state == BaseModel.STATE_NORMAL and self.type_ == Menu.TYPE_CHOICE[0][0] else None
+        verbose_name = '角色权限表'
+        db_table = 'system_role_access'
 
 
 class UserRole(BaseModel):
     related_roles = models.TextField(verbose_name='关联角色', null=True)
-    user = models.ForeignKey(User, verbose_name='用户', null=True, on_delete=models.SET_NULL)
+    user = models.ForeignKey(User, verbose_name='用户', null=True, on_delete=models.SET_NULL,
+                             related_name='system_UserRoles_related')
 
-    create_user = models.ForeignKey(User, null=True, on_delete=models.DO_NOTHING)
-    update_user = models.ForeignKey(User, null=True, on_delete=models.DO_NOTHING)
+    create_user = models.ForeignKey(User, null=True, on_delete=models.DO_NOTHING,
+                                    related_name='system_UserRolesCreated_related')
+    update_user = models.ForeignKey(User, null=True, on_delete=models.DO_NOTHING,
+                                    related_name='system_UserRolesUpdated_related')
 
     class Meta:
         verbose_name = '用户角色表'
         db_table = 'system_user_role'
-
-
-class RoleMenu(BaseModel):
-    related_menus = models.TextField(verbose_name='关联菜单', null=True)
-    role = models.ForeignKey(Role, verbose_name="角色", null=True, on_delete=models.SET_NULL)
-
-    create_user = models.ForeignKey(User, null=True, on_delete=models.DO_NOTHING)
-    update_user = models.ForeignKey(User, null=True, on_delete=models.DO_NOTHING)
-
-    class Meta:
-        verbose_name = '角色菜单表'
-        db_table = 'system_role_menu'
