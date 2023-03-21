@@ -38,7 +38,7 @@ class User(BaseModel):
 
 class Menu(BaseModel):
     name = models.CharField(verbose_name='名称', null=True, max_length=50)
-    url = models.CharField(verbose_name='映射地址', null=True, max_length=50)
+    map = models.CharField(verbose_name='映射', null=True, max_length=50)
     icon = models.CharField(verbose_name='图标', null=True, max_length=50)
     index = models.IntegerField(verbose_name='排序', default=0)
     parent = models.ForeignKey('self', verbose_name='父菜单', null=True, on_delete=models.SET_NULL,
@@ -55,12 +55,25 @@ class Menu(BaseModel):
 
 
 class Access(BaseModel):
+    BACKEND, FRONTEND = ['0', '1']
+    POSITION_CHOICE = [
+        (FRONTEND, '前台'),
+        (BACKEND, '后台'),
+    ]
+    MENU, FUNC = ['0', '1']
+    KIND_CHOICE = [
+        (MENU, '菜单'),
+        (FUNC, '功能'),
+    ]
     name = models.CharField(verbose_name='名称', null=True, max_length=50)
-    url = models.CharField(verbose_name='映射地址', null=True, max_length=50)
+    map = models.CharField(verbose_name='映射', null=True, max_length=50)
     description = models.TextField(verbose_name='描述', null=True)
 
     menu = models.ForeignKey(Menu, verbose_name='关联菜单', null=True, on_delete=models.SET_NULL,
                              related_name='system_Accesses_related')
+
+    position = models.CharField(verbose_name='位置', null=True, max_length=50, choices=POSITION_CHOICE)
+    kind = models.CharField(verbose_name='类型', null=True, max_length=50, choices=KIND_CHOICE)
 
     create_user = models.ForeignKey(User, null=True, on_delete=models.DO_NOTHING,
                                     related_name='system_AccessesCreated_related')
