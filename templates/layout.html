@@ -1,8 +1,172 @@
-{% extends "default.html" %}
-{% block PageTitle %}{{ title }}{% endblock PageTitle %}
+{% extends "base.html" %}
+{% block PageTitle %}
+  {% if title %}{{ title }}{% else %}Worldlet{% endif %}
+{% endblock PageTitle %}
 {% block PageContent %}
-<div></div>
+  {% load static %}
+  <div class="worldlet-layout">
+    <div id="worldletSide" class="worldlet-side">
+      <div class="worldlet-logo layui-bg-black flex-center">Worldlet</div>
+      <div class="layui-side layui-bg-black">
+        <div class="layui-side-scroll">
+          <ul class="layui-nav layui-nav-tree" lay-filter="menuNav">
+            <li class="layui-nav-item layui-nav-itemed">
+              <a href="/home" onclick="return false;" data-options='{"id": 99, "path": "/home"}'>
+                <i class="layui-icon layui-icon-home"></i>
+                <span>首页</span>
+              </a>
+            </li>
+            <li class="layui-nav-item">
+              <a href="/setting" onclick="return false;" data-options='{"id": 99, "path": "/setting"}'>
+                <i class="layui-icon layui-icon-home"></i>
+                <span>设置</span>
+              </a>
+            </li>
+            <li class="layui-nav-item layui-nav-itemed">
+              <a class="" href="javascript:;">menu group 1</a>
+              <dl class="layui-nav-child">
+                <dd><a href="javascript:;">menu 1</a></dd>
+                <dd><a href="javascript:;">menu 2</a></dd>
+                <dd><a href="javascript:;">menu 3</a></dd>
+                <dd><a href="">the links</a></dd>
+              </dl>
+            </li>
+            <li class="layui-nav-item">
+              <a href="javascript:;">menu group 2</a>
+              <dl class="layui-nav-child">
+                <dd><a href="javascript:;">list 1</a></dd>
+                <dd><a href="javascript:;">list 2</a></dd>
+                <dd><a href="">超链接</a></dd>
+              </dl>
+            </li>
+            <li class="layui-nav-item"><a href="javascript:;">click menu item</a></li>
+            <li class="layui-nav-item"><a href="">the links</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="worldlet-main">
+      <div class="layui-header layui-bg-white flex-between">
+        <div class="worldlet-header-left">
+          <div id="sideCollapsed" class="header-icon">
+            <i class="layui-icon layui-icon-shrink-right"></i>
+          </div>
+        </div>
+        <div class="worldlet-header-right">
+          <div class="header-icon" onclick="reloadPage(this)">
+            <i class="layui-icon layui-icon-refresh-3"></i>
+          </div>
+          <div id="userDropdown" class="user-dropdown flex-center">
+            <img src="{% static '/images/user.png' %}" alt="">
+            <span>{{ username }}</span>
+            <i class="layui-icon layui-icon-down"></i>
+          </div>
+        </div>
+      </div>
+      <div class="worldlet-body layui-body">
+        <div id="tabPage" class="layui-tab" lay-filter="tabPage" lay-allowClose="true">
+          <ul class="layui-tab-title">
+            <li class="layui-this" lay-id="/home">
+              <i class="layui-icon layui-icon-home"></i>
+              <span>首页</span>
+            </li>
+            <li lay-id="222">发送信息</li>
+            <li lay-id="333">权限分配</li>
+            <li lay-id="444">审核</li>
+            <li lay-id="555">订单管理</li>
+          </ul>
+          <div class="layui-tab-content">
+            <div class="layui-tab-item layui-show">
+              <div class="layui-panel">
+                <iframe src="./home" height="100%" width="100%"></iframe>
+              </div>
+            </div>
+            <div class="layui-tab-item">2</div>
+            <div class="layui-tab-item">3</div>
+            <div class="layui-tab-item">4</div>
+            <div class="layui-tab-item">5</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 {% endblock PageContent %}
 {% block JavaScript %}
-<script></script>
+  <script>
+    layui.use(['element', 'dropdown', 'layer', 'util'], function () {
+      var $ = layui.$,
+        util = layui.util,
+        layer = layui.layer,
+        element = layui.element,
+        dropdown = layui.dropdown;
+
+      //用户下拉菜单
+      dropdown.render({
+        id: 'userDropdown',
+        elem: '#userDropdown',
+        trigger: 'hover',
+        data: [
+          {title: 'menu item 1', id: 100, href: '#'},
+          {title: 'menu item 2', id: 101, href: '{{d.root}}/', target: '_blank'},
+        ],
+        click: function (obj) {
+          console.log(obj);
+          layer.msg('回调返回的参数已显示再控制台');
+        }
+      });
+
+      //左侧菜单
+      element.on('nav(menuNav)', function (elem) {
+        let dataOptions = $(elem[0]).attr("data-options");
+        let options = JSON.parse(dataOptions);
+        if ($("#tabPage").find("li[lay-id='" + options.path + "']").length > 0) {
+          element.tabChange('tabPage', options.path);
+        } else {
+          element.tabAdd('tabPage', {
+            title: '选项卡的标题',
+            content: '选项卡的内容',
+            id: options.path
+          });
+        }
+      })
+
+      //Tab 切换
+      element.on('tab(tabPage)', function () {
+        location.hash = 'active=' + this.getAttribute('lay-id');
+      });
+
+      //获取hash来切换选项卡，假设当前地址的hash为lay-id对应的值
+      var layid = location.hash.replace(/^#active=/, '');
+      element.tabChange('tabPage', layid);
+
+      //折叠侧边栏-初始化
+      if ($("#worldletSide").hasClass("collapsed")) {
+        $("#sideCollapsed>i").removeClass("layui-icon-shrink-right")
+        $("#sideCollapsed>i").addClass("layui-icon-spread-left")
+      } else {
+        $("#sideCollapsed>i").removeClass("layui-icon-spread-left")
+        $("#sideCollapsed>i").addClass("layui-icon-shrink-right")
+      }
+      //折叠侧边栏-点击
+      $("#sideCollapsed").click(function () {
+        if ($("#worldletSide").hasClass("collapsed")) {
+          $("#worldletSide").removeClass("collapsed")
+          $("#sideCollapsed>i").removeClass("layui-icon-spread-left")
+          $("#sideCollapsed>i").addClass("layui-icon-shrink-right")
+        } else {
+          $("#worldletSide").addClass("collapsed")
+          $("#sideCollapsed>i").removeClass("layui-icon-shrink-right")
+          $("#sideCollapsed>i").addClass("layui-icon-spread-left")
+        }
+      })
+    });
+
+    function reloadPage(obj) {
+      $(obj).css("animation", "rotate360 1s ease-in-out 1");
+      $($(".layui-tab-item.layui-show iframe")[0]).attr("src", $($(".layui-tab-item.layui-show iframe")[0]).attr("src"))
+      setTimeout(function () {
+        $(obj).css("animation", "");
+      }, 1000);
+    }
+  </script>
 {% endblock JavaScript %}

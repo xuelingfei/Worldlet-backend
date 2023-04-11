@@ -1,22 +1,8 @@
-<!DOCTYPE html>
-<html lang="zh">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>{% block PageTitle %}Worldlet{% endblock PageTitle %}</title>
-    {% load static %}
-    <link rel="icon" href="{% static "images/favicon.ico" %}"/>
-    <link rel="stylesheet" href="{% static '/css/flex.css' %}" media="all">
-    <script type="text/javascript" src="{% static '/js/jquery-3.6.0.min.js'%}" charset="utf-8"></script>
-    <style></style>
-    {% block StyleSheet %}{% endblock StyleSheet %}
-</head>
-<body>
-    {% block PageContent %}
-    {% endblock PageContent %}
-    <script type="text/javascript"></script>
-    {% block JavaScript %}
-    {% endblock JavaScript %}
-</body>
-</html>
+{% extends "base.html" %}
+{% block PageTitle %}
+  {% if title %}{{ title }}{% else %}Worldlet{% endif %}
+{% endblock PageTitle %}
+{% block PageContent %}
+{% endblock PageContent %}
+{% block JavaScript %}
+{% endblock JavaScript %}
