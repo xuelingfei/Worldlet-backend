@@ -339,6 +339,10 @@ body {
   }
 }
 
+.worldlet-side .layui-nav-tree .layui-nav-item {
+  cursor: pointer;
+}
+
 .worldlet-body > .layui-tab {
   margin: 0;
   height: 100%;
