@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block PageTitle %}
+  {% if title %}{{ title }}{% else %}Worldlet{% endif %}
+{% endblock PageTitle %}
+{% block StyleSheet %}
+  <style>
+    i.layui-icon {
+      font-size: 300px;
+    }
+    span {
+      font-size: 20px;
+    }
+  </style>
+{% endblock StyleSheet %}
+{% block PageContent %}
+  <div class="page-full flex-center">
+    <i class="layui-icon layui-icon-face-surprised"></i>
+    <span>页面出错了...</span>
+  </div>
+{% endblock PageContent %}
+{% block JavaScript %}
+{% endblock JavaScript %}

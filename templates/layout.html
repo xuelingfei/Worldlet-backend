@@ -8,22 +8,25 @@
     <div id="worldletSide" class="worldlet-side">
       <div class="worldlet-logo layui-bg-black flex-center">Worldlet</div>
       <div class="layui-side layui-bg-black">
+        <input type="hidden" id="accordionFlag" value="{{ accordion }}"/>
         <div class="layui-side-scroll">
-          <ul class="layui-nav layui-nav-tree" lay-filter="menuNav">
+          <ul class="layui-nav layui-nav-tree menu-tree" lay-filter="menuNav">
             <li class="layui-nav-item">
-              <a href="{{ menuTree.0.path|default:'home' }}" onclick="return false;"
-                 data-id="{{ menuTree.0.id }}"
-                 data-options='{{ menuTree.0.data|default:'{"id": 0, "path": "home", "label": "首页"}' }}'>
-                <i class="layui-icon {{ menuTree.0.icon|default:'layui-icon-home' }}"></i>
-                <span>{{ menuTree.0.label|default:'首页' }}</span>
+              <a class="menu-item" onclick="return false;"
+                 href="home"
+                 data-id="home"
+                 data-options='{"id": 0, "path": "home", "label": "首页"}'>
+                <i class="layui-icon layui-icon-home"></i>
+                <span>首页</span>
               </a>
             </li>
             {% for menu in menuTree %}
-              {% if forloop.counter != 1 %}
+              {% if menu.path != 'home' and menu.path != '/home' %}
                 <li class="layui-nav-item">
-                  <a onclick="return false;"
-                     data-options='{{ menu.data|default:'{"path": "404", "label": "404 not found"}' }}'
+                  <a class="menu-item" onclick="return false;"
                       {% if not menu.hasChildren %} href="{{ menu.path|default:'404' }}" {% endif %}
+                     data-id="{{ menu.id|default:'-404' }}"
+                     data-options='{{ menu.data|default:'{"path": "404", "label": "404 not found"}' }}'
                   >
                     {% if menu.path %}
                       <i class="layui-icon {{ menu.icon|default:'layui-icon-app' }}"></i>
@@ -36,7 +39,9 @@
                     <dl class="layui-nav-child">
                       {% for child in menu.children %}
                         <dd>
-                          <a href="{{ child.path|default:'404' }}" onclick="return false;"
+                          <a class="menu-item" onclick="return false;"
+                             href="{{ child.path|default:'404' }}"
+                             data-id="{{ child.id|default:'-404' }}"
                              data-options='{{ child.data|default:'{"path": "404", "label": "404 not found"}' }}'>
                             {% if child.path %}
                               <i class="layui-icon {{ child.icon|default:'layui-icon-app' }}"></i>
@@ -77,15 +82,15 @@
       <div class="worldlet-body layui-body">
         <div id="tabPage" class="layui-tab" lay-filter="tabPage" lay-allowClose="true">
           <ul class="layui-tab-title">
-            <li class="layui-this" lay-id="{{ menuTree.0.path }}">
+            <li lay-id="home">
               <i class="layui-icon layui-icon-home"></i>
-              <span>{{ menuTree.0.label }}</span>
+              <span>首页</span>
             </li>
           </ul>
           <div class="layui-tab-content">
             <div class="layui-tab-item layui-show">
               <div class="layui-panel">
-                <iframe src="{{ menuTree.0.path }}" height="100%" width="100%"></iframe>
+                <iframe src="home" height="100%" width="100%"></iframe>
               </div>
             </div>
           </div>
@@ -97,11 +102,13 @@
 {% block JavaScript %}
   <script>
     layui.use(['element', 'dropdown', 'layer', 'util'], function () {
-      var $ = layui.$,
+      let $ = layui.$,
         util = layui.util,
         layer = layui.layer,
         element = layui.element,
         dropdown = layui.dropdown;
+
+      let worldletSide = $("#worldletSide");
 
       //用户下拉菜单
       dropdown.render({
@@ -118,19 +125,51 @@
         }
       });
 
-      //左侧菜单
-      $(".layui-nav-item").hover(function () {
-        $(".layui-nav-bar").css("top", $(this).offset().top - $(this).parent().offset().top );
-        $(".layui-nav-bar").css("height", "50px");
-        $(".layui-nav-bar").css("opacity", 1);
+      //菜单-悬浮效果
+      $(".menu-item").hover(function () {
+        $(".layui-nav-bar").css({
+          "top": $(this).offset().top - $(this).parents("ul.menu-tree").offset().top,
+          "height": "50px",
+          "opacity": 1
+        });
       }, function () {
         $(".layui-nav-bar").css("opacity", 0);
       });
-      //左侧菜单
+      //菜单和选项卡初始化
+      let activeTab = location.hash.replace(/^#active=/, '');
+      activeTab = activeTab && activeTab !== '' ? activeTab : 'home';
+      let menuItem = selectMenu(activeTab);
+      selectOrAddTab(menuItem);
+      //菜单点击
       element.on('nav(menuNav)', function (elem) {
-        let dataOptions = $(elem[0]).attr("data-options");
+        selectOrAddTab(elem);
+      })
+      //选项卡切换
+      element.on('tab(tabPage)', function () {
+        let layId = this.getAttribute('lay-id');
+        location.hash = 'active=' + layId;
+        selectMenu(layId)
+      });
+
+      //选中菜单
+      function selectMenu(path) {
+        let accordionFlag = $("#accordionFlag").val();
+        console.log(accordionFlag)
+        worldletSide.find(".layui-this").removeClass("layui-this");
+        let selectedMenuItem = worldletSide.find("a.menu-item[href='" + path + "']");
+        if (selectedMenuItem.length > 0) {
+          selectedMenuItem.parent().addClass("layui-this");
+          if (selectedMenuItem.parent().is("dd")) {
+            selectedMenuItem.parents("li.layui-nav-item").addClass("layui-nav-itemed");
+          }
+        }
+        return selectedMenuItem.get(0)
+      }
+
+      //选中或新增选项卡
+      function selectOrAddTab(menuElem) {
+        let dataOptions = $(menuElem).attr("data-options");
         let options = JSON.parse(dataOptions);
-        console.log("userLog", options)
         if (!options.hasChildren) {
           if ($("#tabPage").find("li[lay-id='" + options.path + "']").length === 0) {
             let contentHtml = ''
@@ -145,42 +184,43 @@
           }
           element.tabChange('tabPage', options.path);
         }
-      })
+      }
 
-      //选项卡切换
-      element.on('tab(tabPage)', function () {
-        location.hash = 'active=' + this.getAttribute('lay-id');
-      });
-
-      //获取hash来切换选项卡，假设当前地址的hash为lay-id对应的值
-      var layid = location.hash.replace(/^#active=/, '');
-      element.tabChange('tabPage', layid);
 
       //折叠侧边栏-初始化
-      if ($("#worldletSide").hasClass("collapsed")) {
-        $("#sideCollapsed>i").removeClass("layui-icon-shrink-right")
-        $("#sideCollapsed>i").addClass("layui-icon-spread-left")
+      if (worldletSide.hasClass("collapsed")) {
+        collapsedIcon('spread')
       } else {
-        $("#sideCollapsed>i").removeClass("layui-icon-spread-left")
-        $("#sideCollapsed>i").addClass("layui-icon-shrink-right")
+        collapsedIcon('shrink')
       }
       //折叠侧边栏-点击
       $("#sideCollapsed").click(function () {
-        if ($("#worldletSide").hasClass("collapsed")) {
-          $("#worldletSide").removeClass("collapsed")
-          $("#sideCollapsed>i").removeClass("layui-icon-spread-left")
-          $("#sideCollapsed>i").addClass("layui-icon-shrink-right")
+        if (worldletSide.hasClass("collapsed")) {
+          worldletSide.removeClass("collapsed")
+          collapsedIcon('shrink')
         } else {
-          $("#worldletSide").addClass("collapsed")
-          $("#sideCollapsed>i").removeClass("layui-icon-shrink-right")
-          $("#sideCollapsed>i").addClass("layui-icon-spread-left")
+          worldletSide.addClass("collapsed")
+          collapsedIcon('spread')
         }
       })
+
+      //折叠侧边栏-按钮
+      function collapsedIcon(flag) {
+        let sideCollapsedIcon = $("#sideCollapsed>i");
+        if (flag === 'shrink') {
+          sideCollapsedIcon.removeClass("layui-icon-spread-left")
+          sideCollapsedIcon.addClass("layui-icon-shrink-right")
+        } else if (flag === 'spread') {
+          sideCollapsedIcon.removeClass("layui-icon-shrink-right")
+          sideCollapsedIcon.addClass("layui-icon-spread-left")
+        }
+      }
     });
 
     function reloadPage(obj) {
       $(obj).css("animation", "rotate360 1s ease-in-out 1");
-      $($(".layui-tab-item.layui-show iframe")[0]).attr("src", $($(".layui-tab-item.layui-show iframe")[0]).attr("src"))
+      let iframeShow = $(".layui-tab-item.layui-show iframe").get(0);
+      $(iframeShow).attr("src", $(iframeShow).attr("src"))
       setTimeout(function () {
         $(obj).css("animation", "");
       }, 1000);

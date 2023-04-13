@@ -5,9 +5,5 @@ from django_middleware_global_request import get_request
 
 
 def index(request):
-    ctx = {}
-    user = User.objects.filter(pk=1)
-    setattr(request, 'user', {id: 1})
-    r = get_request()
-    print(r)
+    ctx = {'title': 'user_index'}
     return render(request, 'index.html', ctx)
