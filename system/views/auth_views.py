@@ -24,9 +24,7 @@ def register(request):
 
 
 def layout(request):
-    ctx = {
-        'accordion': True,
-    }
+    ctx = {}
     user = User.objects.filter(pk=1)
     ctx['username'] = '管理员'
     menu_tree = [
@@ -37,6 +35,8 @@ def layout(request):
          'children': [
              {'id': 21, 'path': 'user/index', 'label': '用户管理', 'hasChildren': False,
               'data': dumps({'id': 21, 'path': 'user/index', 'label': '用户管理', 'hasChildren': False})},
+             {'id': 22, 'path': 'user/add', 'label': '用户', 'hasChildren': False,
+              'data': dumps({'id': 22, 'path': 'user/add', 'label': '用户', 'hasChildren': False})},
          ]},
         {'id': 3, 'label': '特殊页面', 'hasChildren': True,
          'data': dumps({'id': 3, 'label': '特殊页面', 'hasChildren': True}),
@@ -58,7 +58,7 @@ def layout(request):
 
 def home(request):
     ctx = {'title': 'home'}
-    return render(request, 'index.html', ctx)
+    return render(request, 'home.html', ctx)
 
 
 def page_permission_denied(request):

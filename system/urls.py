@@ -16,4 +16,5 @@ urlpatterns = [
 
     # 用户管理
     path('user/index', user_views.index, name='user_index'),
+    path('user/add', user_views.add, name='user_add'),
 ]

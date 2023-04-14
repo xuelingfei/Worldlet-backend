@@ -6,9 +6,11 @@
   {% load static %}
   <div class="worldlet-layout">
     <div id="worldletSide" class="worldlet-side">
-      <div class="worldlet-logo layui-bg-black flex-center">Worldlet</div>
+      <div class="worldlet-logo layui-bg-black flex-center-y">
+        <img src="{% static 'img/favicon.ico' %}" alt=""/>
+        <span>Worldlet</span>
+      </div>
       <div class="layui-side layui-bg-black">
-        <input type="hidden" id="accordionFlag" value="{{ accordion }}"/>
         <div class="layui-side-scroll">
           <ul class="layui-nav layui-nav-tree menu-tree" lay-filter="menuNav">
             <li class="layui-nav-item">
@@ -153,8 +155,6 @@
 
       //选中菜单
       function selectMenu(path) {
-        let accordionFlag = $("#accordionFlag").val();
-        console.log(accordionFlag)
         worldletSide.find(".layui-this").removeClass("layui-this");
         let selectedMenuItem = worldletSide.find("a.menu-item[href='" + path + "']");
         if (selectedMenuItem.length > 0) {
@@ -216,6 +216,33 @@
         }
       }
     });
+
+    function addTab(title, path) {
+      layui.use('element', function () {
+        let element = layui.element;
+        let worldletSide = $("#worldletSide");
+        worldletSide.find(".layui-this").removeClass("layui-this");
+        let selectedMenuItem = worldletSide.find("a.menu-item[href='" + path + "']");
+        if (selectedMenuItem.length > 0) {
+          selectedMenuItem.parent().addClass("layui-this");
+          if (selectedMenuItem.parent().is("dd")) {
+            selectedMenuItem.parents("li.layui-nav-item").addClass("layui-nav-itemed");
+          }
+        }
+        if ($("#tabPage").find("li[lay-id='" + path + "']").length === 0) {
+          let contentHtml = ''
+          contentHtml += '<div class="layui-panel">'
+          contentHtml += '  <iframe src="' + path + '" height="100%" width="100%"></iframe>'
+          contentHtml += '</div>'
+          element.tabAdd('tabPage', {
+            id: path,
+            title: title,
+            content: contentHtml,
+          });
+        }
+        element.tabChange('tabPage', path);
+      })
+    }
 
     function reloadPage(obj) {
       $(obj).css("animation", "rotate360 1s ease-in-out 1");

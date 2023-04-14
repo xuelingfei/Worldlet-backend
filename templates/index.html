@@ -2,8 +2,27 @@
 {% block PageTitle %}
   {% if title %}{{ title }}{% else %}Worldlet{% endif %}
 {% endblock PageTitle %}
+{% block StyleSheet %}
+  <style></style>
+{% endblock StyleSheet %}
 {% block PageContent %}
-  <div>{{ title }}</div>
+  <div class="page-full">
+    <div class="page-header">
+      <form class="layui-form inline-form" action="">
+        <div class="inline-form-item">
+          <input type="text" name="" autocomplete="off" class="layui-input" placeholder="请输入查询条件">
+        </div>
+        <div class="inline-form-item">
+          <button class="layui-btn" onclick="window.parent.addTab('测试', 'user/add')">
+            <i class="layui-icon layui-icon-search"></i>
+          </button>
+        </div>
+      </form>
+    </div>
+    <div class="page-container">
+      <div>{{ title }}</div>
+    </div>
+  </div>
 {% endblock PageContent %}
 {% block JavaScript %}
 {% endblock JavaScript %}

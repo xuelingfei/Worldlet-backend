@@ -7,3 +7,8 @@ from django_middleware_global_request import get_request
 def index(request):
     ctx = {'title': 'user_index'}
     return render(request, 'index.html', ctx)
+
+
+def add(request):
+    ctx = {'title': 'user_add'}
+    return render(request, 'form.html', ctx)

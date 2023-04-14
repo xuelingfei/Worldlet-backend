@@ -237,7 +237,20 @@ body {
   left: 0;
   width: 100%;
   height: 60px;
+  box-sizing: border-box;
+  padding: 0 20px;
   font-size: 16px;
+}
+
+.worldlet-logo img {
+  margin-right: 10px;
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.worldlet-logo span {
+  cursor: default;
 }
 
 .worldlet-side .layui-side {
@@ -418,6 +431,23 @@ body {
 
 .page-header {
   flex-shrink: 0;
+  box-sizing: border-box;
+  padding: 15px 15px 0;
+}
+
+.page-container {
+  position: relative;
+  box-sizing: border-box;
+  padding: 5px 15px 20px;
+}
+
+.inline-form-item {
+  display: inline-block;
+  margin: 0 20px 15px 0;
+}
+
+.inline-form-item:last-child {
+  margin-right: 0;
 }
 
 /*补充*/
